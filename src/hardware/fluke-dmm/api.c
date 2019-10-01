@@ -53,11 +53,11 @@ static const char *scan_conn[] = {
 };
 
 static const struct flukedmm_profile supported_flukedmm[] = {
-	{ FLUKE_187, "187", 100, 1000 },
-	{ FLUKE_189, "189", 100, 1000 },
-	{ FLUKE_287, "287", 100, 1000 },
-	{ FLUKE_190, "199B", 1000, 3500 },
-	{ FLUKE_289, "289", 100, 1000 },
+	{ FLUKE_187, "187", "QM\r", 100, 1000 },
+	{ FLUKE_189, "189", "QM\r", 100, 1000 },
+	{ FLUKE_287, "287", "QDDA\r", 100, 1000 },
+	{ FLUKE_190, "199B", "QM\r", 1000, 3500 },
+	{ FLUKE_289, "289", "QDDA\r", 100, 1000 },
 };
 
 static GSList *fluke_scan(struct sr_dev_driver *di, const char *conn,
@@ -204,6 +204,7 @@ static int dev_acquisition_start(const struct sr_dev_inst *sdi)
 {
 	struct dev_context *devc;
 	struct sr_serial_dev_inst *serial;
+	const char *poll_cmd;
 
 	devc = sdi->priv;
 
@@ -214,8 +215,9 @@ static int dev_acquisition_start(const struct sr_dev_inst *sdi)
 	serial_source_add(sdi->session, serial, G_IO_IN, 50,
 			fluke_receive_data, (void *)sdi);
 
-	if (serial_write_blocking(serial, "QM\r", 3, SERIAL_WRITE_TIMEOUT_MS) < 0) {
-		sr_err("Unable to send QM.");
+	poll_cmd = devc->profile->poll_cmd;
+	if (serial_write_blocking(serial, poll_cmd, strlen(poll_cmd), SERIAL_WRITE_TIMEOUT_MS) < 0) {
+		sr_err("Unable to send poll command.");
 		return SR_ERR;
 	}
 	devc->cmd_sent_at = g_get_monotonic_time() / 1000;

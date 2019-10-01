@@ -40,6 +40,8 @@ enum {
 struct flukedmm_profile {
 	int model;
 	const char *modelname;
+	/* Which poll command to use */
+	const char *poll_cmd;
 	/* How often to poll, in ms. */
 	int poll_period;
 	/* If no response received, how long to wait before retrying. */
@@ -61,7 +63,7 @@ struct dev_context {
 	enum sr_mqflag mqflags;
 };
 
-SR_PRIV void fluke_handle_qm_28x(const struct sr_dev_inst *sdi, char **tokens);
+SR_PRIV void fluke_handle_qdda_28x(const struct sr_dev_inst *sdi, char **tokens, int num_tokens);
 
 SR_PRIV int fluke_receive_data(int fd, int revents, void *cb_data);
 

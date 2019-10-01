@@ -329,16 +329,16 @@ static void handle_line(const struct sr_dev_inst *sdi)
 	}
 
 	tokens = g_strsplit(devc->buf, ",", 0);
+	for (num_tokens = 0; tokens[num_tokens]; num_tokens++);
 	if (tokens[0]) {
 		if (devc->profile->model == FLUKE_187 || devc->profile->model == FLUKE_189) {
 			devc->expect_response = FALSE;
 			handle_qm_18x(sdi, tokens);
 		} else if (devc->profile->model == FLUKE_287 || devc->profile->model == FLUKE_289) {
 			devc->expect_response = FALSE;
-			fluke_handle_qm_28x(sdi, tokens);
+			fluke_handle_qdda_28x(sdi, tokens, num_tokens);
 		} else if (devc->profile->model == FLUKE_190) {
 			devc->expect_response = FALSE;
-			for (num_tokens = 0; tokens[num_tokens]; num_tokens++);
 			if (num_tokens >= 7) {
 				/* Response to QM: this is a comma-separated list of
 				 * fields with metadata about the measurement. This
@@ -369,6 +369,7 @@ SR_PRIV int fluke_receive_data(int fd, int revents, void *cb_data)
 	struct sr_dev_inst *sdi;
 	struct dev_context *devc;
 	struct sr_serial_dev_inst *serial;
+	const char *poll_cmd;
 	int len;
 	int64_t now, elapsed;
 
@@ -379,6 +380,8 @@ SR_PRIV int fluke_receive_data(int fd, int revents, void *cb_data)
 
 	if (!(devc = sdi->priv))
 		return TRUE;
+
+	poll_cmd = devc->profile->poll_cmd;
 
 	serial = sdi->conn;
 	if (revents == G_IO_IN) {
@@ -409,8 +412,8 @@ SR_PRIV int fluke_receive_data(int fd, int revents, void *cb_data)
 	 * out-of-sync or temporary disconnect issues. */
 	if ((devc->expect_response == FALSE && elapsed > devc->profile->poll_period)
 			|| elapsed > devc->profile->timeout) {
-		if (serial_write_blocking(serial, "QM\r", 3, SERIAL_WRITE_TIMEOUT_MS) < 0)
-			sr_err("Unable to send QM.");
+		if (serial_write_blocking(serial, poll_cmd, strlen(poll_cmd), SERIAL_WRITE_TIMEOUT_MS) < 0)
+			sr_err("Unable to send poll command.");
 		devc->cmd_sent_at = now;
 		devc->expect_response = TRUE;
 	}
