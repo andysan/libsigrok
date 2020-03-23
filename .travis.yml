@@ -1,0 +1,41 @@
+version: ~> 1.0
+
+# Tell travis to use C++ to make sure we get all of the right defaults
+# when we build the wrappers.
+language: cpp
+
+compiler:
+  - clang
+  - gcc
+
+addons:
+  apt:
+    update: true
+    packages:
+      - autoconf-archive
+      - libglib2.0-dev
+      - libzip-dev
+      - libftdi1-dev
+      - libusb-1.0-0-dev
+      - libhidapi-dev
+      - libbluetooth-dev
+      - libieee1284-3-dev
+      - libglibmm-2.4-dev
+      - python-gi-dev
+      - python-setuptools
+      - python-numpy
+      - swig
+      - check
+      - doxygen
+
+install:
+  - wget https://github.com/sigrokproject/libserialport/archive/libserialport-0.1.1.tar.gz
+  - tar -xzvf libserialport-0.1.1.tar.gz
+  - pushd libserialport-libserialport-0.1.1 && ./autogen.sh && ./configure --prefix=/usr && make && sudo make install && popd
+
+script:
+  - ./autogen.sh
+  - ./configure --prefix=/usr
+  - make
+  - make ./tests/main
+  - make check && echo "test-site.log:" && cat test-suite.log
